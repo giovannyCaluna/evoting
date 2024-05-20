@@ -61,7 +61,7 @@ contract BlockchainVoting {
         hasVoted[_voterAddress] = true;
         if (_candidateAddress == candidatesR[0].candidateAddress) {
             uint256 randomNumber = getRandomNormalized(nounce++);
-            if (randomNumber < epsilon) {
+            if (randomNumber <= epsilon) {
                 candidatesR[0].voteCount++;
                 voters.push(
                     Voter(_voterAddress, candidates[0].candidateAddress, true)
@@ -114,14 +114,24 @@ contract BlockchainVoting {
         uint256 randomNumber
     ) public view returns (uint256) {
         if (randomNumber % epsilon == 0) {
-            return (randomNumber / epsilon) - 1;
+            if ((randomNumber / epsilon) - 1 >= TotalCandidates) {
+                return TotalCandidates - 1;
+            } else {
+                return (randomNumber / epsilon) - 1;
+            }
         } else {
-            return (randomNumber / epsilon);
+            if (randomNumber / epsilon >= TotalCandidates) {
+                return TotalCandidates - 1;
+            } else {
+                return randomNumber / epsilon;
+            }
         }
     }
 
     function getRandomNormalized(uint randNonce) public view returns (uint256) {
-        uint randomNumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, randNonce)));
+        uint randomNumber = uint(
+            keccak256(abi.encodePacked(block.timestamp, msg.sender, randNonce))
+        );
         return randomNumber % 10001;
     }
 
@@ -129,8 +139,9 @@ contract BlockchainVoting {
         Results[] memory finalResults = new Results[](candidatesR.length);
         uint256 total_number_of_votes_for_pivot = 0;
         if (candidatesR.length > 0) {
-            //total_number_of_votes_for_pivot = (candidatesR[0].voteCount * TotalCandidates ) /(TotalCandidates-1);
-            total_number_of_votes_for_pivot =candidatesR[0].voteCount * TotalCandidates;
+            total_number_of_votes_for_pivot =
+                candidatesR[0].voteCount *
+                TotalCandidates;
             finalResults[0] = Results(
                 candidatesR[0].name,
                 total_number_of_votes_for_pivot
